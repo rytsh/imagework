@@ -1,0 +1,6 @@
+assets/*
+out/*
+.ipynb_checkpoints/*
+
+# except
+!assets/.gitkeep

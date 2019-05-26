@@ -1,1 +1,3 @@
 wand
+matplotlib
+numpy

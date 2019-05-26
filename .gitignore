@@ -1,6 +1,8 @@
 assets/*
 out/*
 .ipynb_checkpoints/*
+__pycache__
 
 # except
 !assets/.gitkeep
+!assets/lena256.ppm

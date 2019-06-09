@@ -37,6 +37,16 @@ python image.py
 
 and check `out` folder
 
+For debuging put this lines in somewhere
+```python
+import ipdb
+ipdb.set_trace()
+```
+
 ## Customization
 
 Edit config.ini file to use another image.
+
+## Links
+
+> https://en.wikipedia.org/wiki/Kernel_(image_processing)

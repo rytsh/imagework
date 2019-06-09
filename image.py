@@ -16,6 +16,9 @@ import configparser
 from wand.image import Image
 from wand.display import display
 
+from scipy.signal import convolve2d as conv2
+from scipy.signal import medfilt2d as medfilt2
+
 config = configparser.ConfigParser()
 
 
@@ -91,6 +94,13 @@ def pixel2image(array_img, out, iname, img_name):
         img_x.save(filename='{}/{}-{}.{}'.format(out, os.path.splitext(img_name)[0], iname, img_x.format))
 
 
+def saltPepper(img_array, ratio=0.02):
+    """Salt & Pepper to array of image."""
+    count = int(img_array.size * ratio)
+    for i in range(count):
+        img_array[np.random.randint(0, 255, dtype=np.uint8)][np.random.randint(0, 255, dtype=np.uint8)] = [255] if i % 2 == 0 else [0]
+
+
 def screenLog(message, title="INFO"):
     """Print to Log Screen."""
     print("[{0}] \t==\t {1} {2}".format(title, message, (60 - len(message)) * "="))
@@ -158,6 +168,13 @@ if __name__ == "__main__":
         sigma = [1, 5, 10, 20]  # standard deviation
         mu = 0  # mean
 
+        kernel_low = np.ones((3, 3)) * 1 / 9  # low pass filter kernel
+
+        kernel_high = np.array([
+            [-1, -1, -1],
+            [-1, 8, -1],
+            [-1, -1, -1]])
+
         for i in sigma:
             screenLog("Using standard deviation {} and saving image".format(i), "HW2")
             s = np.random.normal(mu, i, size=(img_height, img_width, 1)).astype(np.int8)
@@ -176,4 +193,32 @@ if __name__ == "__main__":
             pixel2image(array_the, folder_out, 'noise-{}-C'.format(i), img_name)
 
             # turn greyscale of that array
-            pixel2image(array2grey(array_the), folder_out, 'noise-{}-B'.format(i), img_name)
+            grey_array = array2grey(array_the)
+            pixel2image(grey_array, folder_out, 'noise-{}-B'.format(i), img_name)
+
+            # apply low pass filter
+            # 256,256,1 -> 256,256 pixel
+            height, width, _ = grey_array.shape
+            grey_array = np.resize(grey_array, (height, width))
+            filtered = conv2(grey_array, kernel_low, 'same')
+            filtered = filtered.round().astype(np.uint8)
+            pixel2image(filtered, folder_out, 'noise-{}-low-filter-B'.format(i), img_name)
+
+            # apply high pass filter
+            filtered = conv2(grey_array, kernel_high, 'same')
+            filtered = np.interp(filtered, (filtered.min(), filtered.max()), (0, 255)).round().astype(np.uint8)
+            pixel2image(filtered, folder_out, 'noise-{}-high-filter-B'.format(i), img_name)
+
+        screenLog("Add salt&pepper and filter with using median-filter".format(i), "HW2")
+        # Adding salt and pepper
+        saltPepper(array)
+        pixel2image(array, folder_out, 'salt-pepper-C'.format(i), img_name)
+        # Fix to just 2d array
+        grey_array = array2grey(array)
+        pixel2image(grey_array, folder_out, 'salt-pepper-B'.format(i), img_name)
+
+        height, width, _ = grey_array.shape
+        grey_array = np.resize(grey_array, (height, width))
+        # Apply median with 3x3 kernel
+        filtered = medfilt2(grey_array)
+        pixel2image(filtered, folder_out, 'salt-pepper-median-filter'.format(i), img_name)
